@@ -152,6 +152,19 @@ def recurs_reload():
                 return (f'{amount} км это {round(inches / 63360, 2)} в милях \n'
                         f' или {round(inches, 2)} в дюймах \n'
                         f' или {round(inches / 12, 2)} в футах')
+            elif elements[2] == 'дюйм':
+                sm = 2.54 * amount
+                return (f'{amount} дюймов это {round(sm, 2)} в сантиметрах\n'
+                        f' или {round(sm / 100, 2)} в метрах')
+            elif elements[2] == 'фут':
+                sm = 30.48 * amount
+                return (f'{amount} футов это {round(sm, 2)} в сантиметрах\n'
+                        f' или {round(sm / 100, 2)} в метрах')
+            elif elements[2] == 'миль':
+                sm = 160934 * amount
+                return (f'{amount} миль это {round(sm / 100000, 2)} в километрах \n'
+                        f' или {round(sm, 2)} в сантиметрах \n'
+                        f' или {round(sm / 100, 2)} в метрах')
             else:
                 inches = amount * 39.3701
                 return (f'{amount} метров {round(inches, 2)} в дюймах \n'
