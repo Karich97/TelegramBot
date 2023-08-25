@@ -4,16 +4,18 @@ import requests
 import json
 from currency_converter import CurrencyConverter
 import openai
-
+import time
 
 about_bot = (
-            'Привет, я Karich-Helper-Bot. Я могу сказать погоду на сутки, конвертировать валюты и учусь общаться. '
-            'Чтобы узнать погоду в любом городе достаточно просто ввести его название. Чтобы произвести конвертацию '
-            'валют просто спросите "какой курс" и я постараюсь вам помочь.')
+    'Привет, я Karich-Helper-Bot. Я могу сказать погоду на сутки, конвертировать валюты и величины, а ещё учусь '
+    'общаться. Чтобы узнать погоду в любом городе достаточно просто ввести его название. Чтобы произвести конвертацию '
+    'валют просто спросите "какой курс" и я постараюсь вам помочь. Чтобы перевести метрические единицы в неметрически '
+    'введите запрос в формате "Преобразуй 1091.87 мм"')
 weather_API_key = 'afca35e0a5606c9a045fa6592eb962cf'
 converter_API_key = 'db5ffabf3cb94524b8157e43af4d8bb6'
 open_AI_key = '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'
 telebot_key = '6047133927:AAGghMLkgEJTkopYrSksrSmZzCRhsd_bKLE'
+currconv_Key = '43661ac5708035cdc91f'
 
 
 def recurs_reload():
@@ -57,7 +59,8 @@ def recurs_reload():
                 bot.send_message(message.chat.id, 'введите название города погода в котором вам интересна')
             elif 'как ' in text and ' дела' in text:
                 bot.send_message(message.chat.id, 'Всегда всё хорошо. Спасибо что спросили.')
-            elif ('расскажи' in text and 'себе' in text) or 'помощь' in text or 'подска' in text:
+            elif (('расскажи' in text and 'себе' in text) or 'помощь' in text or 'подска' in text or 'помоги' in text
+                  or ('что' in text and 'умеешь' in text)):
                 bot.send_message(message.chat.id, about_bot)
             elif 'спасиб' in text or 'благодарю' in text:
                 bot.send_message(message.chat.id, 'Обращайтесь, всегда рад быть полезен.')
@@ -91,14 +94,23 @@ def recurs_reload():
                                  f'Влажность {weather["main"]["humidity"]} \n'
                                  f'Ветер {weather["wind"]["speed"]} \n')
                 else:
-                    if len(text.split(' ')) > 3:
-                        try:
-                            bot.reply_to(message, f'{generate_response(text)}')
-                        except Exception as ex:
-                            print(f'OpenAI API error - {ex} ON {text}')
-                            bot.reply_to(message, f'Увы я пока не умею отвечать на это.')
+                    if 'преобразуй' in text and ('мм' in text or 'см' in text or 'дм' in text
+                                                 or 'м' in text or 'км' in text):
+                        result = metric_converter(text)
+                        if result == '-1':
+                            bot.reply_to(message, 'если хотите преобразовать единицы метрической системы в дюймовую'
+                                                  ' введите запрос в формате: "Переведи 1111.99 км в мили"')
+                        else:
+                            bot.reply_to(message, f'{result}')
                     else:
-                        bot.reply_to(message, f'К сожалению я не знаю город {message.text}')
+                        if len(text.split(' ')) > 3:
+                            try:
+                                bot.reply_to(message, f'{generate_response(text)}')
+                            except Exception as ex:
+                                print(f'OpenAI API error - {ex} ON {text}')
+                                bot.reply_to(message, f'Увы я пока не умею отвечать на это.')
+                        else:
+                            bot.reply_to(message, f'К сожалению я не знаю город {message.text}')
 
         @bot.callback_query_handler(func=lambda call: True)
         def callback(call):
@@ -114,6 +126,37 @@ def recurs_reload():
                 else:
                     bot.send_message(call.message.chat.id, 'Не понимаю формат, повторите. Пример: 999.99 usd rub')
                     bot.register_next_step_handler(call.message, my_currency)
+
+        def metric_converter(text):
+            text = text.replace(',', '.').strip()
+            elements = text.split(' ')
+            try:
+                amount = float(elements[1])
+            except ValueError:
+                print(f'metric convert error {elements}')
+                return '-1'
+            if elements[2] == 'мм':
+                inches = 0.0393701 * amount
+                return (f'{amount} мм это {round(inches, 2)} в дюймах\n'
+                        f' или {round(inches / 12, 2)} в футах')
+            elif elements[2] == 'см':
+                inches = 0.393701 * amount
+                return (f'{amount} см это {round(inches, 2)} в дюймах\n'
+                        f' или {round(inches / 12, 2)} в футах')
+            elif elements[2] == 'дм':
+                inches = 3.93701 * amount
+                return (f'{amount} дм это {round(inches, 2)} в дюймах\n'
+                        f' или {round(inches / 12, 2)} в футах')
+            elif elements[2] == 'км':
+                inches = 39370.1 * amount
+                return (f'{amount} км это {round(inches / 63360, 2)} в милях \n'
+                        f' или {round(inches, 2)} в дюймах \n'
+                        f' или {round(inches / 12, 2)} в футах')
+            else:
+                inches = amount * 39.3701
+                return (f'{amount} метров {round(inches, 2)} в дюймах \n'
+                        f' или {round(inches / 63360, 2)} в милях \n'
+                        f' или {round(inches / 12, 2)} в футах')
 
         def summa(message):
             try:
@@ -197,6 +240,7 @@ def recurs_reload():
         bot.polling(none_stop=True)
     except Exception as e:
         print(e)
+        time.sleep(5)
         recurs_reload()
 
 
