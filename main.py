@@ -5,6 +5,7 @@ import json
 from currency_converter import CurrencyConverter
 import openai
 import time
+from feature.converter import metric_converter
 
 about_bot = (
     'Привет, я Karich-Helper-Bot. Я могу сказать погоду на сутки, конвертировать валюты и величины, а ещё учусь '
@@ -16,6 +17,7 @@ converter_API_key = 'db5ffabf3cb94524b8157e43af4d8bb6'
 open_AI_key = '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'
 telebot_key = '6047133927:AAGghMLkgEJTkopYrSksrSmZzCRhsd_bKLE'
 currconv_Key = '43661ac5708035cdc91f'
+currconv_Address = 'https://free.currconv.com/api/v7/convert?q=USD_RUB&compact=ultra&apiKey=43661ac5708035cdc91f'
 
 
 def recurs_reload():
@@ -95,7 +97,8 @@ def recurs_reload():
                                  f'Ветер {weather["wind"]["speed"]} \n')
                 else:
                     if 'преобразуй' in text and ('мм' in text or 'см' in text or 'дм' in text
-                                                 or 'м' in text or 'км' in text):
+                                                 or 'м' in text or 'км' in text or 'дюйм' in text
+                                                 or 'фут' in text or 'мил' in text):
                         result = metric_converter(text)
                         if result == '-1':
                             bot.reply_to(message, 'если хотите преобразовать единицы метрической системы в дюймовую'
@@ -126,50 +129,6 @@ def recurs_reload():
                 else:
                     bot.send_message(call.message.chat.id, 'Не понимаю формат, повторите. Пример: 999.99 usd rub')
                     bot.register_next_step_handler(call.message, my_currency)
-
-        def metric_converter(text):
-            text = text.replace(',', '.').strip()
-            elements = text.split(' ')
-            try:
-                amount = float(elements[1])
-            except ValueError:
-                print(f'metric convert error {elements}')
-                return '-1'
-            if elements[2] == 'мм':
-                inches = 0.0393701 * amount
-                return (f'{amount} мм это {round(inches, 2)} в дюймах\n'
-                        f' или {round(inches / 12, 2)} в футах')
-            elif elements[2] == 'см':
-                inches = 0.393701 * amount
-                return (f'{amount} см это {round(inches, 2)} в дюймах\n'
-                        f' или {round(inches / 12, 2)} в футах')
-            elif elements[2] == 'дм':
-                inches = 3.93701 * amount
-                return (f'{amount} дм это {round(inches, 2)} в дюймах\n'
-                        f' или {round(inches / 12, 2)} в футах')
-            elif elements[2] == 'км':
-                inches = 39370.1 * amount
-                return (f'{amount} км это {round(inches / 63360, 2)} в милях \n'
-                        f' или {round(inches, 2)} в дюймах \n'
-                        f' или {round(inches / 12, 2)} в футах')
-            elif elements[2] == 'дюйм':
-                sm = 2.54 * amount
-                return (f'{amount} дюймов это {round(sm, 2)} в сантиметрах\n'
-                        f' или {round(sm / 100, 2)} в метрах')
-            elif elements[2] == 'фут':
-                sm = 30.48 * amount
-                return (f'{amount} футов это {round(sm, 2)} в сантиметрах\n'
-                        f' или {round(sm / 100, 2)} в метрах')
-            elif elements[2] == 'миль':
-                sm = 160934 * amount
-                return (f'{amount} миль это {round(sm / 100000, 2)} в километрах \n'
-                        f' или {round(sm, 2)} в сантиметрах \n'
-                        f' или {round(sm / 100, 2)} в метрах')
-            else:
-                inches = amount * 39.3701
-                return (f'{amount} метров {round(inches, 2)} в дюймах \n'
-                        f' или {round(inches / 63360, 2)} в милях \n'
-                        f' или {round(inches / 12, 2)} в футах')
 
         def summa(message):
             try:
